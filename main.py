@@ -1,8 +1,11 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+from database import create_document, get_documents
 
-app = FastAPI()
+app = FastAPI(title="Marketing Agency API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,7 +17,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello from FastAPI Backend!"}
+    return {"message": "Marketing Agency Backend Running"}
 
 @app.get("/api/hello")
 def hello():
@@ -63,6 +66,56 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+# ------------------------
+# Lead capture endpoints
+# ------------------------
+
+class LeadIn(BaseModel):
+    name: str
+    email: str
+    company: Optional[str] = None
+    website: Optional[str] = None
+    phone: Optional[str] = None
+    services: Optional[List[str]] = None
+    budget: Optional[str] = None
+    message: Optional[str] = None
+    source: Optional[str] = "website"
+
+@app.post("/api/leads")
+def create_lead(lead: LeadIn):
+    try:
+        lead_id = create_document("lead", lead.model_dump())
+        return {"id": lead_id, "status": "created"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/leads")
+def list_leads(limit: int = 50):
+    try:
+        docs = get_documents("lead", limit=limit)
+        # Convert ObjectId to string if present
+        for d in docs:
+            if "_id" in d:
+                d["id"] = str(d.pop("_id"))
+        return {"items": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ------------------------
+# Case studies endpoints (read-only for website)
+# ------------------------
+
+@app.get("/api/case-studies")
+def list_case_studies(limit: int = 20):
+    try:
+        docs = get_documents("casestudy", limit=limit)
+        for d in docs:
+            if "_id" in d:
+                d["id"] = str(d.pop("_id"))
+        return {"items": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

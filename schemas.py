@@ -12,7 +12,7 @@ Model name is converted to lowercase for the collection name:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 # Example schemas (replace with your own):
 
@@ -37,6 +37,37 @@ class Product(BaseModel):
     price: float = Field(..., ge=0, description="Price in dollars")
     category: str = Field(..., description="Product category")
     in_stock: bool = Field(True, description="Whether product is in stock")
+
+# Marketing agency specific schemas
+
+class Lead(BaseModel):
+    """
+    Leads captured from website forms
+    Collection name: "lead"
+    """
+    name: str = Field(..., description="Contact full name")
+    email: str = Field(..., description="Contact email")
+    company: Optional[str] = Field(None, description="Company name")
+    website: Optional[str] = Field(None, description="Company website")
+    phone: Optional[str] = Field(None, description="Phone number")
+    services: Optional[List[str]] = Field(default=None, description="Interested services")
+    budget: Optional[str] = Field(None, description="Estimated monthly budget range")
+    message: Optional[str] = Field(None, description="Additional details or goals")
+    source: Optional[str] = Field("website", description="Lead source e.g. website, referral")
+
+class CaseStudy(BaseModel):
+    """
+    Case studies/portfolio entries
+    Collection name: "casestudy"
+    """
+    title: str
+    client: str
+    industry: Optional[str] = None
+    summary: str
+    impact: Optional[str] = None
+    metrics: Optional[dict] = None
+    image_url: Optional[str] = None
+    slug: Optional[str] = None
 
 # Add your own schemas here:
 # --------------------------------------------------
